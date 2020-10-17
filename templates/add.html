@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Add Sound{% endblock %}
+{% block headertitle %}<h1>Add Sound <h1>{% endblock %}
+{% block stylesheet %}
+{% endblock %}
+{% block body %}
+<div class="row">
+	<div class="col-md-12">
+
+<form method="post" action="/add">
+
+<div class="form-group">
+    <label for="inputTitle">Song Title</label>
+    <input type="input" class="form-control" name="inputTitle" id="inputTitle" aria-describedby="emailHelp" value="{{ song.Title }}"placeholder="Song Title">
+</div>
+{% if titleMessageError == true %}
+<div class="alert alert-warning" role="alert">
+    {{ titleMessage }}
+</div>
+{% endif %}
+<div class="form-group">
+    <label for="inputKeywords">Description</label>
+    <input type="input" class="form-control" name="inputKeywords" id="inputKeywords" aria-describedby="keywordsHelp" value="{{ song.Description }}"placeholder="Keywords">
+</div>
+{% if postDescriptionMessageError == true %}
+<div class="alert alert-warning" role="alert">
+    {{ postDescriptionMessage }}
+</div>
+{% endif %}
+
+</form>
+
+	</div>
+</div>
+{% endblock %}
+{% block script %}
+    <script>
+
+    </script>
+{% endblock %}
