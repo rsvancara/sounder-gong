@@ -10,4 +10,6 @@ require (
 	github.com/gordonklaus/portaudio v0.0.0-20200911161147-bb74aa485641
 	github.com/gorilla/handlers v1.5.1
 	github.com/gorilla/mux v1.8.0
+	github.com/hashicorp/go-memdb v1.3.0
+	github.com/segmentio/ksuid v1.0.3
 )

@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block title %}Sound Gong{% endblock %}
-{% block headertitle %}<h1>Sound Gong<h1>{% endblock %}
+{% block headertitle %}<h1>Sound Gong</h1>{% endblock %}
 {% block stylesheet %}
 {% endblock %}
 {% block body %}
@@ -9,6 +9,29 @@
 		<a href="/add" class="btn btn-primary">Add</a>
 	</div>
 </div>
+<div class="row">
+	<div class="col-md-12">
+		<table class="table">
+			<tr>
+				<th>
+				ID
+				</th>
+				<th>
+				Title
+				</th>
+			</tr>
+			
+{% for s in songs %}
+			<tr>
+    				<td>{{ s.ID }}</td>
+    				<td>{{ s.Title }}</td>
+			</tr>
+
+{% endfor %}
+		</table>
+	</div>
+</div>
+
 {% endblock %}
 {% block script %}
     <script>

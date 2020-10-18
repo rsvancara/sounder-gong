@@ -1,4 +1,4 @@
-# sounder-gong
+# Sounder Gong 
 
 This project aims to build a raspberry pi based sound board that is capable of integrating with a Elgato Stream Deck.
 
@@ -28,5 +28,12 @@ The interface is written in GoLang and aims to be as simple as possible. The web
 sound clips while responding with as low as latency as possibly.  Additionally since it is written in go, you can simply install
 the binary, set the binary up to run as a service and you are done.  Connect up your hardware, load up sound clips and you are ready to go.  
 After you have uploaded some sounds, configure your Elgato Stream Deck with the URL's provided through the web interface.  
+
+## Limitations 
+
+- You can upload as many songs as you like with any length, however your limit is the space on your SD Card.
+- No builtin mechanism exists for backing up your songs and database, but the data is stored on disk and can easily be copied to off to alternative storage.
+- You have to configure ALSA to use the HiFiBerry, Please see the documentation for the HiFiBerry or similar DAC you want to use.
+- You can use the built in sound device in the raspberry pi for testing, but the sound quality is not super great, but maybe good enough for you.
 
 
