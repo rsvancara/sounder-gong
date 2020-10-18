@@ -2,22 +2,26 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
-	"github.com/flosch/pongo2"
-	"github.com/gorilla/handlers"
-	"github.com/gorilla/mux"
-	"github.com/hashicorp/go-memdb"
-	"github.com/segmentio/ksuid"
 	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"os/exec"
 	"os/signal"
 	"time"
+
+	"github.com/flosch/pongo2"
+	"github.com/gorilla/handlers"
+	"github.com/gorilla/mux"
+	"github.com/hashicorp/go-memdb"
+	"github.com/segmentio/ksuid"
 )
 
+//Song song
 type Song struct {
 	ID          string `json:"id"`
 	Title       string `json:"title"`
@@ -25,6 +29,12 @@ type Song struct {
 	Path        string `json:"path"`
 }
 
+//Songs List of Songs
+type Songs struct {
+	Songs []Song
+}
+
+//DB Memory Database
 var DB *memdb.MemDB
 
 func main() {
@@ -35,15 +45,26 @@ func main() {
 	flag.Parse()
 
 	// Create the in memory database
-        db, err := CreateDB()
+	db, err := CreateDB()
 	if err != nil {
 		panic(err)
 	}
 	DB = db
 
+	// Load the database if we have a state file
+	songs, err := LoadDatabase()
+	for _, s := range songs {
+
+		err := s.CreateSong()
+		if err != nil {
+			fmt.Printf("Error loading database entry from state file with error: %s\n", err)
+		}
+	}
+
 	r := mux.NewRouter()
 	r.Handle("/", handlers.LoggingHandler(os.Stdout, http.HandlerFunc(HomeHandler)))
 	r.Handle("/add", handlers.LoggingHandler(os.Stdout, http.HandlerFunc(AddHandler)))
+	r.Handle("/commit", handlers.LoggingHandler(os.Stdout, http.HandlerFunc(SaveDatabaseHandler)))
 	r.Handle("/delete/{soundid}", handlers.LoggingHandler(os.Stdout, http.HandlerFunc(DeleteHandler)))
 	r.Handle("/play/{soundid}", handlers.LoggingHandler(os.Stdout, http.HandlerFunc(PlaySoundHandler)))
 
@@ -97,7 +118,6 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		fmt.Printf("Error retrieving songs: %s", err)
 	}
-
 
 	template := "templates/index.html"
 	//template := "templates/index.html"
@@ -174,7 +194,7 @@ func AddHandler(w http.ResponseWriter, r *http.Request) {
 			fmt.Printf("MIME Header: %+v\n", handler.Header)
 
 			// Create file
-			dst, err := os.Create(handler.Filename)
+			dst, err := os.Create("sounds/" + song.ID + "_" + handler.Filename)
 			defer dst.Close()
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -189,9 +209,11 @@ func AddHandler(w http.ResponseWriter, r *http.Request) {
 
 			//fmt.Fprintf(w, "Successfully Uploaded File\n")
 			err = song.CreateSong()
-			if err != nil  {
-				fmt.Printf("Error saving song to database: %s \n",err)
+			if err != nil {
+				fmt.Printf("Error saving song to database: %s \n", err)
 			}
+
+			song.Path = "sounds/" + handler.Filename
 
 			http.Redirect(w, r, "/", http.StatusSeeOther)
 			return
@@ -244,6 +266,35 @@ func PlaySoundHandler(w http.ResponseWriter, r *http.Request) {
 	go PlaySound("sounds/cartoon-birds-2_daniel-simion.wav")
 }
 
+// SaveDatabaseHandler saves the database to commit file
+func SaveDatabaseHandler(w http.ResponseWriter, r *http.Request) {
+
+	status := true
+	err := CommitDatabase()
+	if err != nil {
+		fmt.Printf("Error Saving Database: %s", err)
+		status = false
+	}
+
+	template := "templates/commit.html"
+	//template := "templates/index.html"
+	tmpl := pongo2.Must(pongo2.FromFile(template))
+
+	out, err := tmpl.Execute(pongo2.Context{
+		"title":  "Commit Status",
+		"status": status,
+		"err":    err,
+	})
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		fmt.Println(err)
+	}
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprintf(w, out)
+
+}
+
 // PlaySound plays the sound specified by the soundfile parameter that must be a valid path to a sound file
 func PlaySound(soundfile string) {
 
@@ -257,40 +308,7 @@ func PlaySound(soundfile string) {
 	fmt.Printf("%s\n", out)
 }
 
-func uploadFile(w http.ResponseWriter, r *http.Request) {
-	// Maximum upload of 10 MB files
-	r.ParseMultipartForm(10 << 20)
-
-	// Get handler for filename, size and headers
-	file, handler, err := r.FormFile("myFile")
-	if err != nil {
-		fmt.Println("Error Retrieving the File")
-		fmt.Println(err)
-		return
-	}
-
-	defer file.Close()
-	fmt.Printf("Uploaded File: %+v\n", handler.Filename)
-	fmt.Printf("File Size: %+v\n", handler.Size)
-	fmt.Printf("MIME Header: %+v\n", handler.Header)
-
-	// Create file
-	dst, err := os.Create(handler.Filename)
-	defer dst.Close()
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	// Copy the uploaded file to the created file on the filesystem
-	if _, err := io.Copy(dst, file); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	fmt.Fprintf(w, "Successfully Uploaded File\n")
-}
-
+// CreateDB create new instance of in memory database
 func CreateDB() (*memdb.MemDB, error) {
 
 	// Create the DB schema
@@ -317,26 +335,42 @@ func CreateDB() (*memdb.MemDB, error) {
 	return db, nil
 }
 
-func (s *Song)CreateSong() error {
+//CreateSong add a new song to the database
+func (s *Song) CreateSong() error {
 
 	txn := DB.Txn(true)
 
-	err := txn.Insert("song",s)
+	err := txn.Insert("song", s)
 	if err != nil {
 		return err
 	}
 
 	txn.Commit()
 
-	return nil
-}
-
-func (s *Song)DeleteSong() error {
+	fmt.Printf("Added song to database ID:%s Title:%s PATH: %s\n", s.ID, s.Title, s.Path)
 
 	return nil
 }
 
-func ListSongs()([]*Song, error) {
+//DeleteSong remove song from the database
+func (s *Song) DeleteSong() error {
+
+	return nil
+}
+
+//GetSongs get songs from a songs type
+func (s *Songs) GetSongs() ([]Song, error) {
+	var songs []Song
+
+	for _, song := range s.Songs {
+		songs = append(songs, song)
+	}
+
+	return songs, nil
+}
+
+//ListSongs Obtain a list of songs from the database
+func ListSongs() ([]*Song, error) {
 	var songs []*Song
 
 	txn := DB.Txn(false)
@@ -351,14 +385,66 @@ func ListSongs()([]*Song, error) {
 	for obj := it.Next(); obj != nil; obj = it.Next() {
 		s := obj.(*Song)
 		fmt.Println(s)
-		songs = append(songs,s)
+		songs = append(songs, s)
 
 	}
 	return songs, nil
 }
 
-// Generate a unique identifier
+//GenUUID Generate a unique identifier
 func GenUUID() string {
 	id := ksuid.New()
 	return id.String()
+}
+
+//CommitDatabase save in memory database to a file
+func CommitDatabase() error {
+
+	songs, err := ListSongs()
+	if err != nil {
+		return err
+	}
+
+	jsonData, err := json.Marshal(songs)
+	if err != nil {
+		return err
+	}
+
+	err = ioutil.WriteFile("database/state.json", jsonData, 0644)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+//LoadDatabase loads the database from state file
+func LoadDatabase() ([]Song, error) {
+
+	var songs []Song
+
+	fmt.Printf("Extracting json information from the state file\n")
+	jsonFile, err := os.Open("database/state.json")
+	if err != nil {
+		return songs, err
+	}
+
+	defer jsonFile.Close()
+
+	byteValue, err := ioutil.ReadAll(jsonFile)
+	if err != nil {
+		return songs, err
+	}
+
+	fmt.Printf("Unmarshing json data to object")
+	err = json.Unmarshal(byteValue, &songs)
+	if err != nil {
+		return songs, err
+	}
+
+	for _, s := range songs {
+		fmt.Printf("DB Load ID: %s Title: %s Path: %s\n", s.ID, s.Title, s.Path)
+	}
+
+	return songs, nil
 }
