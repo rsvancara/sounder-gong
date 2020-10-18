@@ -7,21 +7,25 @@ import (
 	"github.com/flosch/pongo2"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
+	"github.com/hashicorp/go-memdb"
+	"github.com/segmentio/ksuid"
+	"io"
 	"log"
 	"net/http"
 	"os"
-	"io"
 	"os/exec"
 	"os/signal"
 	"time"
 )
 
 type Song struct {
-	ID  string `json:"id"`
-	Title string `json:"title"`
+	ID          string `json:"id"`
+	Title       string `json:"title"`
 	Description string `json:"description"`
-	Path string `json:"path"`
+	Path        string `json:"path"`
 }
+
+var DB *memdb.MemDB
 
 func main() {
 
@@ -30,14 +34,21 @@ func main() {
 	flag.DurationVar(&wait, "graceful-timeout", time.Second*15, "the duration for which the server gracefully wait for existing connections to finish - e.g. 15s or 1m")
 	flag.Parse()
 
+	// Create the in memory database
+        db, err := CreateDB()
+	if err != nil {
+		panic(err)
+	}
+	DB = db
+
 	r := mux.NewRouter()
 	r.Handle("/", handlers.LoggingHandler(os.Stdout, http.HandlerFunc(HomeHandler)))
 	r.Handle("/add", handlers.LoggingHandler(os.Stdout, http.HandlerFunc(AddHandler)))
 	r.Handle("/delete/{soundid}", handlers.LoggingHandler(os.Stdout, http.HandlerFunc(DeleteHandler)))
 	r.Handle("/play/{soundid}", handlers.LoggingHandler(os.Stdout, http.HandlerFunc(PlaySoundHandler)))
 
-	dir := "./static" 
-        r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir(dir))))
+	dir := "./static"
+	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir(dir))))
 
 	http.Handle("/", r)
 
@@ -82,12 +93,19 @@ func main() {
 func HomeHandler(w http.ResponseWriter, r *http.Request) {
 	//vars := mux.Vars(r)
 
+	songs, err := ListSongs()
+	if err != nil {
+		fmt.Printf("Error retrieving songs: %s", err)
+	}
+
+
 	template := "templates/index.html"
 	//template := "templates/index.html"
 	tmpl := pongo2.Must(pongo2.FromFile(template))
 
 	out, err := tmpl.Execute(pongo2.Context{
-		"title":     "Index",
+		"title": "Index",
+		"songs": songs,
 	})
 
 	if err != nil {
@@ -115,21 +133,21 @@ func AddHandler(w http.ResponseWriter, r *http.Request) {
 		validate := true
 		if err := r.ParseMultipartForm(10 << 20); nil != err {
 			validate = false
-			fileMessage = fmt.Sprintf("Error uploading file: %s",err)
+			fileMessage = fmt.Sprintf("Error uploading file: %s", err)
 			fileMessageError = true
 			fmt.Println("Error Retrieving the File")
 		}
 
 		song.Title = r.FormValue("inputTitle")
 		song.Description = r.FormValue("inputDescription")
+		song.ID = GenUUID()
 
 		// Validation
 		if song.Title == "" {
 			validate = false
-			titleMessage =  "Please provide a title"
+			titleMessage = "Please provide a title"
 			titleMessageError = true
 		}
-
 
 		if song.Description == "" {
 			validate = false
@@ -142,13 +160,12 @@ func AddHandler(w http.ResponseWriter, r *http.Request) {
 		if fileErr != nil {
 
 			validate = false
-			fileMessage = fmt.Sprintf("Error uploading file: %s",fileErr)
+			fileMessage = fmt.Sprintf("Error uploading file: %s", fileErr)
 			fileMessageError = true
 			fmt.Println("Error Retrieving the File")
 			fmt.Println(fileErr)
 
 		}
-
 
 		if validate == true {
 
@@ -171,6 +188,10 @@ func AddHandler(w http.ResponseWriter, r *http.Request) {
 			}
 
 			//fmt.Fprintf(w, "Successfully Uploaded File\n")
+			err = song.CreateSong()
+			if err != nil  {
+				fmt.Printf("Error saving song to database: %s \n",err)
+			}
 
 			http.Redirect(w, r, "/", http.StatusSeeOther)
 			return
@@ -187,14 +208,13 @@ func AddHandler(w http.ResponseWriter, r *http.Request) {
 	tmpl := pongo2.Must(pongo2.FromFile(template))
 
 	out, err := tmpl.Execute(pongo2.Context{
-		"title":     "Add",
-		"titleMessage": titleMessage,
-		"titleMessageError": titleMessageError,
-		"descriptionMessage": descriptionMessage,
+		"title":                   "Add",
+		"titleMessage":            titleMessage,
+		"titleMessageError":       titleMessageError,
+		"descriptionMessage":      descriptionMessage,
 		"descriptionMessageError": descriptionMessageError,
-		"fileMessage": fileMessage,
-		"fileMessageError": fileMessageError,
-
+		"fileMessage":             fileMessage,
+		"fileMessageError":        fileMessageError,
 	})
 
 	if err != nil {
@@ -214,20 +234,20 @@ func DeleteHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "delete")
 }
 
-// PlaySoundHandler handler for playing songs 
+// PlaySoundHandler handler for playing songs
 func PlaySoundHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	fmt.Fprintf(w, "It Works")
 
 	// Play sound in a go routine so it does not block
-	go PlaySound("cartoon-birds-2_daniel-simion.wav")
+	go PlaySound("sounds/cartoon-birds-2_daniel-simion.wav")
 }
 
 // PlaySound plays the sound specified by the soundfile parameter that must be a valid path to a sound file
 func PlaySound(soundfile string) {
 
-	// This is possiby the most horrific way to play a sound, but it works 
+	// This is possiby the most horrific way to play a sound, but it works
 	cmd := exec.Command("/usr/bin/aplay", soundfile)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
@@ -269,4 +289,76 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 	}
 
 	fmt.Fprintf(w, "Successfully Uploaded File\n")
+}
+
+func CreateDB() (*memdb.MemDB, error) {
+
+	// Create the DB schema
+	schema := &memdb.DBSchema{
+		Tables: map[string]*memdb.TableSchema{
+			"song": &memdb.TableSchema{
+				Name: "song",
+				Indexes: map[string]*memdb.IndexSchema{
+					"id": &memdb.IndexSchema{
+						Name:    "id",
+						Unique:  true,
+						Indexer: &memdb.StringFieldIndex{Field: "ID"},
+					},
+				},
+			},
+		},
+	}
+	// Create a new data base
+	db, err := memdb.NewMemDB(schema)
+	if err != nil {
+		return nil, err
+	}
+
+	return db, nil
+}
+
+func (s *Song)CreateSong() error {
+
+	txn := DB.Txn(true)
+
+	err := txn.Insert("song",s)
+	if err != nil {
+		return err
+	}
+
+	txn.Commit()
+
+	return nil
+}
+
+func (s *Song)DeleteSong() error {
+
+	return nil
+}
+
+func ListSongs()([]*Song, error) {
+	var songs []*Song
+
+	txn := DB.Txn(false)
+	defer txn.Abort()
+
+	// List all the people
+	it, err := txn.Get("song", "id")
+	if err != nil {
+		return nil, err
+	}
+
+	for obj := it.Next(); obj != nil; obj = it.Next() {
+		s := obj.(*Song)
+		fmt.Println(s)
+		songs = append(songs,s)
+
+	}
+	return songs, nil
+}
+
+// Generate a unique identifier
+func GenUUID() string {
+	id := ksuid.New()
+	return id.String()
 }
