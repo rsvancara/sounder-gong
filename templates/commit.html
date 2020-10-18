@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Sound Gong{% endblock %}
+{% block headertitle %}<h1>Commit Status</h1>{% endblock %}
+{% block stylesheet %}
+{% endblock %}
+{% block body %}
+<div class="row">
+	<div class="col-md-12">
+		{% if status == true %}
+		<p>Database saved successfully</p>
+		{% endif %}
+		{% if status == false %}
+		<p>Database was not saved with error {{ err }}</p>
+		{% endif %}
+
+	</div>	
+</div>
+
+{% endblock %}
+{% block script %}
+    <script>
+
+    </script>
+{% endblock %}

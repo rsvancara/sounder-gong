@@ -31,7 +31,7 @@ type Song struct {
 
 //Songs List of Songs
 type Songs struct {
-	Songs []Song
+	Songs []Song `json:"songs"`
 }
 
 //DB Memory Database
@@ -53,7 +53,9 @@ func main() {
 
 	// Load the database if we have a state file
 	songs, err := LoadDatabase()
-	for _, s := range songs {
+	for _, s := range songs.Songs {
+
+		fmt.Printf("Loading Song DB: ID: %s, Title: %s, Path: %s\n", s.ID, s.Title, s.Path)
 
 		err := s.CreateSong()
 		if err != nil {
@@ -169,12 +171,6 @@ func AddHandler(w http.ResponseWriter, r *http.Request) {
 			titleMessageError = true
 		}
 
-		if song.Description == "" {
-			validate = false
-			descriptionMessage = "Please provide a title"
-			descriptionMessageError = true
-		}
-
 		// Get handler for filename, size and headers
 		file, handler, fileErr := r.FormFile("inputFile")
 		if fileErr != nil {
@@ -272,7 +268,7 @@ func SaveDatabaseHandler(w http.ResponseWriter, r *http.Request) {
 	status := true
 	err := CommitDatabase()
 	if err != nil {
-		fmt.Printf("Error Saving Database: %s", err)
+		fmt.Printf("Error Saving Database: %s\n", err)
 		status = false
 	}
 
@@ -322,6 +318,11 @@ func CreateDB() (*memdb.MemDB, error) {
 						Unique:  true,
 						Indexer: &memdb.StringFieldIndex{Field: "ID"},
 					},
+					"title": &memdb.IndexSchema{
+						Name:    "title",
+						Unique:  false,
+						Indexer: &memdb.StringFieldIndex{Field: "Title"},
+					},
 				},
 			},
 		},
@@ -339,6 +340,7 @@ func CreateDB() (*memdb.MemDB, error) {
 func (s *Song) CreateSong() error {
 
 	txn := DB.Txn(true)
+	txn.TrackChanges()
 
 	err := txn.Insert("song", s)
 	if err != nil {
@@ -346,6 +348,18 @@ func (s *Song) CreateSong() error {
 	}
 
 	txn.Commit()
+
+	ch := txn.Changes()
+
+	for _, c := range ch {
+		fmt.Println(c.Table)
+		fmt.Println(c.Created())
+		fmt.Println(c.Updated())
+		fmt.Println(c.After.(*Song))
+
+	}
+
+	txn.Abort()
 
 	fmt.Printf("Added song to database ID:%s Title:%s PATH: %s\n", s.ID, s.Title, s.Path)
 
@@ -370,8 +384,8 @@ func (s *Songs) GetSongs() ([]Song, error) {
 }
 
 //ListSongs Obtain a list of songs from the database
-func ListSongs() ([]*Song, error) {
-	var songs []*Song
+func ListSongs() ([]Song, error) {
+	var songs []Song
 
 	txn := DB.Txn(false)
 	defer txn.Abort()
@@ -384,8 +398,17 @@ func ListSongs() ([]*Song, error) {
 
 	for obj := it.Next(); obj != nil; obj = it.Next() {
 		s := obj.(*Song)
-		fmt.Println(s)
-		songs = append(songs, s)
+
+		var newsong Song
+
+		newsong.ID = s.ID
+		newsong.Path = s.Path
+		newsong.Description = s.Description
+		newsong.Title = s.Title
+
+		fmt.Printf("Listing ID: %s, Title: %s, Path %s\n", newsong.ID, newsong.Title, newsong.Path)
+
+		songs = append(songs, newsong)
 
 	}
 	return songs, nil
@@ -400,9 +423,24 @@ func GenUUID() string {
 //CommitDatabase save in memory database to a file
 func CommitDatabase() error {
 
-	songs, err := ListSongs()
+	var songs Songs
+
+	songlist, err := ListSongs()
 	if err != nil {
 		return err
+	}
+
+	for _, s := range songlist {
+
+		var newsong Song
+		newsong.ID = s.ID
+		newsong.Title = s.Title
+		newsong.Description = s.Description
+		newsong.Path = s.Path
+
+		fmt.Printf("Committing: ID: %s Title: %s Path: %s\n", newsong.ID, newsong.Title, newsong.Path)
+
+		songs.Songs = append(songs.Songs, newsong)
 	}
 
 	jsonData, err := json.Marshal(songs)
@@ -419,9 +457,9 @@ func CommitDatabase() error {
 }
 
 //LoadDatabase loads the database from state file
-func LoadDatabase() ([]Song, error) {
+func LoadDatabase() (Songs, error) {
 
-	var songs []Song
+	var songs Songs
 
 	fmt.Printf("Extracting json information from the state file\n")
 	jsonFile, err := os.Open("database/state.json")
@@ -436,13 +474,13 @@ func LoadDatabase() ([]Song, error) {
 		return songs, err
 	}
 
-	fmt.Printf("Unmarshing json data to object")
+	fmt.Printf("Unmarshing json data to object\n	")
 	err = json.Unmarshal(byteValue, &songs)
 	if err != nil {
 		return songs, err
 	}
 
-	for _, s := range songs {
+	for _, s := range songs.Songs {
 		fmt.Printf("DB Load ID: %s Title: %s Path: %s\n", s.ID, s.Title, s.Path)
 	}
 

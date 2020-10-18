@@ -30,14 +30,17 @@
 				<th>
 				Title
 				</th>
+				<th>
+
+				</th>
 			</tr>
 			
 {% for s in songs %}
 			<tr>
     				<td>{{ s.ID }}</td>
-    				<td>{{ s.Title }}</td>
+					<td>{{ s.Title }}</td>
+					<td><a href="/delete/{{ s.ID }}" class="btn btn-primary">Delete</a></td>
 			</tr>
-
 {% endfor %}
 		</table>
 	</div>
