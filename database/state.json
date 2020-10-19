@@ -1,34 +1,10 @@
 {
     "songs": [
         {
-            "id": "1j3sG7fapOritpdbfKxEkU7Ka3l",
-            "title": "same song",
-            "description": "nooner",
-            "path": "sounds/Crazy_Town-_Butterfly-9hYNjn1gohM.mp3"
-        },
-        {
-            "id": "1j4ZyvcTxPJdgYGUsCFegcoDrfp",
-            "title": "adfasdf",
-            "description": "adfasdf",
-            "path": "sounds/Beastie_Boys_-_Sabotage_Official_Music_Video-z5rRZdiu1UE.mp3"
-        },
-        {
-            "id": "1j4a03rT9P8K1BBPZcGTzD64omi",
-            "title": "dfsgdgsfhh",
-            "description": "sghsdfgsdfg",
-            "path": "sounds/Anna_Kendrick_-_Cups_Pitch_Perfect_s_When_I_m_Gone_Official_Video-cmSbXsFE3l8.mp3"
-        },
-        {
-            "id": "1j4jfgNmwtvxrUDMOdc73YY1jbA",
-            "title": "adsfasdf",
-            "description": "asdfadsf",
-            "path": ""
-        },
-        {
-            "id": "1j4jhZQZoz33f467zFUcVZWPvaH",
-            "title": "sadfbrghrt4",
-            "description": "test",
-            "path": ""
+            "id": "1j4pNvo2Mc1SRIRV9xJI04zqzew",
+            "title": "Sabatoge",
+            "description": "fasdfasdfasdf",
+            "path": "sounds/1j4pNvo2Mc1SRIRV9xJI04zqzew_Beastie_Boys_-_Sabotage_Official_Music_Video-z5rRZdiu1UE.mp3"
         }
     ]
 }
