@@ -42,6 +42,11 @@
 			<tr>
     				<td>{{ s.ID }}</td>
 					<td>{{ s.Title }}</td>
+					<td>
+						<button class="btn btn-danger copy" data-clipboard-text="/play/{{ s.ID }}">
+							Copy to clipboard
+						</button>
+					</td>
 					<td><a href="/play/{{ s.ID }}" class="btn btn-primary">Play</a></td>
 					<td><a href="/delete/{{ s.ID }}" class="btn btn-primary">Delete</a></td>
 			</tr>
@@ -54,12 +59,6 @@
 {% block script %}
 <script src="/static/clipboard.min.js"></script>
 <script>
-
-
-
-
-	function callUrl(id){
-
-	}
+	new ClipboardJS('.copy');
 </script>
 {% endblock %}
