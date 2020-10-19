@@ -33,12 +33,16 @@
 				<th>
 
 				</th>
+				<th>
+
+				</th>
 			</tr>
 			
 {% for s in songs %}
 			<tr>
     				<td>{{ s.ID }}</td>
 					<td>{{ s.Title }}</td>
+					<td><a href="/play/{{ s.ID }}" class="btn btn-primary">Play</a></td>
 					<td><a href="/delete/{{ s.ID }}" class="btn btn-primary">Delete</a></td>
 			</tr>
 {% endfor %}
@@ -48,7 +52,13 @@
 
 {% endblock %}
 {% block script %}
-    <script>
+<script>
 
-    </script>
+
+
+
+	function callUrl(id){
+
+	}
+</script>
 {% endblock %}

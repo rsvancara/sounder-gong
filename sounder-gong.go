@@ -191,13 +191,13 @@ func AddHandler(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
+			song.Path = "sounds/" + song.ID + "_" + handler.Filename
+
 			//fmt.Fprintf(w, "Successfully Uploaded File\n")
 			err = song.CreateSong()
 			if err != nil {
 				fmt.Printf("Error saving song to database: %s \n", err)
 			}
-
-			song.Path = "sounds/" + handler.Filename
 
 			http.Redirect(w, r, "/", http.StatusSeeOther)
 			return
@@ -257,11 +257,22 @@ func DeleteHandler(w http.ResponseWriter, r *http.Request) {
 // PlaySoundHandler handler for playing songs
 func PlaySoundHandler(w http.ResponseWriter, r *http.Request) {
 
-	w.WriteHeader(http.StatusOK)
-	fmt.Fprintf(w, "It Works")
+	vars := mux.Vars(r)
+
+	id := vars["soundid"]
+	var song Song
+
+	err := song.GetSong(id)
+	if err != nil {
+		fmt.Printf("Error getting song: %s\n", err)
+	}
+
+	//w.WriteHeader(http.StatusOK)
 
 	// Play sound in a go routine so it does not block
-	go PlaySound("sounds/cartoon-birds-2_daniel-simion.wav")
+	go PlaySound(song.Path)
+
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
 // SaveDatabaseHandler saves the database to commit file
@@ -296,8 +307,10 @@ func SaveDatabaseHandler(w http.ResponseWriter, r *http.Request) {
 // PlaySound plays the sound specified by the soundfile parameter that must be a valid path to a sound file
 func PlaySound(soundfile string) {
 
+	fmt.Printf("Playing %s\n", soundfile)
+
 	// This is possiby the most horrific way to play a sound, but it works
-	cmd := exec.Command("/usr/bin/aplay", soundfile)
+	cmd := exec.Command("/usr/local/bin/aplay", soundfile)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		fmt.Println(err)
