@@ -51,18 +51,6 @@ func main() {
 	}
 	DB = db
 
-	// Load the database if we have a state file
-	songs, err := LoadDatabase()
-	for _, s := range songs.Songs {
-
-		fmt.Printf("Loading Song DB: ID: %s, Title: %s, Path: %s\n", s.ID, s.Title, s.Path)
-
-		err := s.CreateSong()
-		if err != nil {
-			fmt.Printf("Error loading database entry from state file with error: %s\n", err)
-		}
-	}
-
 	r := mux.NewRouter()
 	r.Handle("/", handlers.LoggingHandler(os.Stdout, http.HandlerFunc(HomeHandler)))
 	r.Handle("/add", handlers.LoggingHandler(os.Stdout, http.HandlerFunc(AddHandler)))
@@ -246,10 +234,24 @@ func AddHandler(w http.ResponseWriter, r *http.Request) {
 
 // DeleteHandler handler for deleting songs
 func DeleteHandler(w http.ResponseWriter, r *http.Request) {
-	//vars := mux.Vars(r)
+	vars := mux.Vars(r)
 
-	w.WriteHeader(http.StatusOK)
-	fmt.Fprintf(w, "delete")
+	id := vars["soundid"]
+
+	var song Song
+
+	err := song.GetSong(id)
+	if err != nil {
+		fmt.Printf("Error getting song: %s\n", err)
+	}
+
+	err = song.DeleteSong()
+	if err != nil {
+		fmt.Printf("Error deleting song: %s\n", err)
+	}
+
+	http.Redirect(w, r, "/", http.StatusSeeOther)
+	return
 }
 
 // PlaySoundHandler handler for playing songs
@@ -318,11 +320,6 @@ func CreateDB() (*memdb.MemDB, error) {
 						Unique:  true,
 						Indexer: &memdb.StringFieldIndex{Field: "ID"},
 					},
-					"title": &memdb.IndexSchema{
-						Name:    "title",
-						Unique:  false,
-						Indexer: &memdb.StringFieldIndex{Field: "Title"},
-					},
 				},
 			},
 		},
@@ -330,14 +327,29 @@ func CreateDB() (*memdb.MemDB, error) {
 	// Create a new data base
 	db, err := memdb.NewMemDB(schema)
 	if err != nil {
-		return nil, err
+		panic(err)
 	}
+
+	songs, err := LoadState()
+	if err != nil {
+		panic(err)
+	}
+
+	txn := db.Txn(true)
+
+	for _, s := range songs.Songs {
+		if err := txn.Insert("song", s); err != nil {
+			panic(err)
+		}
+	}
+
+	txn.Commit()
 
 	return db, nil
 }
 
 //CreateSong add a new song to the database
-func (s *Song) CreateSong() error {
+func (s Song) CreateSong() error {
 
 	txn := DB.Txn(true)
 	txn.TrackChanges()
@@ -355,11 +367,11 @@ func (s *Song) CreateSong() error {
 		fmt.Println(c.Table)
 		fmt.Println(c.Created())
 		fmt.Println(c.Updated())
-		fmt.Println(c.After.(*Song))
+		fmt.Println(c.After.(Song))
 
 	}
 
-	txn.Abort()
+	txn = nil
 
 	fmt.Printf("Added song to database ID:%s Title:%s PATH: %s\n", s.ID, s.Title, s.Path)
 
@@ -368,6 +380,35 @@ func (s *Song) CreateSong() error {
 
 //DeleteSong remove song from the database
 func (s *Song) DeleteSong() error {
+	txn := DB.Txn(true)
+	// Lookup by email
+	err := txn.Delete("song", s)
+	if err != nil {
+		return err
+	}
+
+	txn.Commit()
+
+	return nil
+}
+
+// GetSong get song by ID
+func (s *Song) GetSong(id string) error {
+	txn := DB.Txn(false)
+	// Lookup by email
+	raw, err := txn.First("song", "id", id)
+	if err != nil {
+		return err
+	}
+
+	sval := raw.(Song)
+
+	s.ID = sval.ID
+	s.Path = sval.Path
+	s.Title = sval.Title
+	s.Description = sval.Description
+
+	txn.Abort()
 
 	return nil
 }
@@ -397,7 +438,7 @@ func ListSongs() ([]Song, error) {
 	}
 
 	for obj := it.Next(); obj != nil; obj = it.Next() {
-		s := obj.(*Song)
+		s := obj.(Song)
 
 		var newsong Song
 
@@ -443,7 +484,7 @@ func CommitDatabase() error {
 		songs.Songs = append(songs.Songs, newsong)
 	}
 
-	jsonData, err := json.Marshal(songs)
+	jsonData, err := json.MarshalIndent(songs, "", "    ")
 	if err != nil {
 		return err
 	}
@@ -456,8 +497,8 @@ func CommitDatabase() error {
 	return nil
 }
 
-//LoadDatabase loads the database from state file
-func LoadDatabase() (Songs, error) {
+//LoadState loads the database from state file
+func LoadState() (Songs, error) {
 
 	var songs Songs
 
