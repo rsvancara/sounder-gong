@@ -36,4 +36,114 @@ After you have uploaded some sounds, configure your Elgato Stream Deck with the 
 - You have to configure ALSA to use the HiFiBerry, Please see the documentation for the HiFiBerry or similar DAC you want to use.
 - You can use the built in sound device in the raspberry pi for testing, but the sound quality is not super great, but maybe good enough for you.
 
+## Installation
+
+### Raspberry Pi Setup
+
+#### Install packages
+
+```bash
+apt-get install mplayer apt-get avahi-utils avahi-daemon pulseaudio-module-zeroconf
+
+```
+
+- mplayer is used by sounder-gong to play sounds.  I did not implement a native golang player, but rather used mplayer instead
+- You could use ALSA directly but pulseaudio allows you to play multiple sounds simultaneously.  
+
+#### Configure environment to use pulse audio
+
+Configure ALSA
+
+```bash
+sudo vim /etc/asound.conf
+```
+
+Add the following contents
+
+```bash
+pcm.hifiberry {
+  type hw card 1
+}
+
+pcm.!default {
+  type plug
+  slave.pcm "dmixer"
+}
+
+pcm.dmixer {
+  type dmix
+  ipc_key 1024
+  slave {
+    pcm "hifiberry"
+    channels 2
+  }
+}
+
+ctl.dmixer {
+  type hw
+  card 1
+}
+```
+
+Make sure that the raspberry pi has the config overlay for the HiFiBerry DAC
+
+```bash
+vim /boot/config.txt
+```
+
+**** You will have to reboot the raspberry pi after editing the config.txt ****
+
+Add the following lines are in the general section
+
+```bash
+# Enable dac
+dtoverlay=hifiberry-dacplus
+dtoverlay=i2s-mmap
+```
+
+Ensure the avahi-daemon is running
+
+```bash
+systemctl install avahi-daemon
+systemctl start avahi-daemon
+```
+
+Ensure Pulse Audio is running (TODO: Figure out how to initialize this, normally pulseaudio starts with your window manager)
+
+```bash
+pulseaudio -D
+```
+
+We need to configure PulseAudio to use the right sound card, we use pacmd for this
+
+```bash
+pi@raspberrypi:~ $ pacmd
+Welcome to PulseAudio 12.2! Use "help" for usage information.
+>>> list-sinks
+... Lots of stuff printed here, but grab the index of the hifiberry, for me it was #1
+>>> set-default-sink 1
+>>> exit
+```
+
+Start pulseaudio again
+
+```bash
+pulseaudio -D
+```
+
+Now you should be able to make mplayer play sound through the DAC, please connect
+your DAC to something so you can hear the sound!!
+
+```bash
+mplayer -ao pulse somesoundfile.wav
+```
+
+If you hear the sound, PulseAudio is working correctly
+
+TODO: Find an interface to confi
+
+
+
+
+
 

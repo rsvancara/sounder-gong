@@ -37,6 +37,9 @@ type Songs struct {
 //DB Memory Database
 var DB *memdb.MemDB
 
+//VERSION Application version
+var VERSION string = "0.0.1"
+
 func main() {
 
 	fmt.Println("Starting application")
@@ -54,6 +57,7 @@ func main() {
 	r := mux.NewRouter()
 	r.Handle("/", handlers.LoggingHandler(os.Stdout, http.HandlerFunc(HomeHandler)))
 	r.Handle("/add", handlers.LoggingHandler(os.Stdout, http.HandlerFunc(AddHandler)))
+	r.Handle("/about", handlers.LoggingHandler(os.Stdout, http.HandlerFunc(AboutHandler)))
 	r.Handle("/commit", handlers.LoggingHandler(os.Stdout, http.HandlerFunc(SaveDatabaseHandler)))
 	r.Handle("/delete/{soundid}", handlers.LoggingHandler(os.Stdout, http.HandlerFunc(DeleteHandler)))
 	r.Handle("/play/{soundid}", handlers.LoggingHandler(os.Stdout, http.HandlerFunc(PlaySoundHandler)))
@@ -109,13 +113,44 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Printf("Error retrieving songs: %s", err)
 	}
 
+	hostname, err := os.Hostname()
+	if err != nil {
+		fmt.Println("hostname:", hostname)
+	}
+	if hostname == "" {
+		hostname = "localhost"
+	}
+
 	template := "templates/index.html"
 	//template := "templates/index.html"
 	tmpl := pongo2.Must(pongo2.FromFile(template))
 
 	out, err := tmpl.Execute(pongo2.Context{
-		"title": "Index",
-		"songs": songs,
+		"title":    "Index",
+		"songs":    songs,
+		"hostname": hostname,
+		"VERSION":  VERSION,
+	})
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		fmt.Println(err)
+	}
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprintf(w, out)
+
+}
+
+// AboutHandler About page
+func AboutHandler(w http.ResponseWriter, r *http.Request) {
+
+	template := "templates/about.html"
+	//template := "templates/index.html"
+	tmpl := pongo2.Must(pongo2.FromFile(template))
+
+	out, err := tmpl.Execute(pongo2.Context{
+		"title":   "About Sounder Gong",
+		"VERSION": VERSION,
 	})
 
 	if err != nil {
@@ -221,6 +256,7 @@ func AddHandler(w http.ResponseWriter, r *http.Request) {
 		"descriptionMessageError": descriptionMessageError,
 		"fileMessage":             fileMessage,
 		"fileMessageError":        fileMessageError,
+		"VERSION":                 VERSION,
 	})
 
 	if err != nil {
@@ -279,7 +315,7 @@ func PlaySoundHandler(w http.ResponseWriter, r *http.Request) {
 func SaveDatabaseHandler(w http.ResponseWriter, r *http.Request) {
 
 	status := true
-	err := CommitDatabase()
+	err := SaveState()
 	if err != nil {
 		fmt.Printf("Error Saving Database: %s\n", err)
 		status = false
@@ -290,9 +326,10 @@ func SaveDatabaseHandler(w http.ResponseWriter, r *http.Request) {
 	tmpl := pongo2.Must(pongo2.FromFile(template))
 
 	out, err := tmpl.Execute(pongo2.Context{
-		"title":  "Commit Status",
-		"status": status,
-		"err":    err,
+		"title":   "Commit Status",
+		"status":  status,
+		"err":     err,
+		"version": VERSION,
 	})
 
 	if err != nil {
@@ -301,7 +338,6 @@ func SaveDatabaseHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	w.WriteHeader(http.StatusOK)
 	fmt.Fprintf(w, out)
-
 }
 
 // PlaySound plays the sound specified by the soundfile parameter that must be a valid path to a sound file
@@ -310,7 +346,8 @@ func PlaySound(soundfile string) {
 	fmt.Printf("Playing %s\n", soundfile)
 
 	// This is possiby the most horrific way to play a sound, but it works
-	cmd := exec.Command("/usr/local/bin/aplay", soundfile)
+	// cmd := exec.Command("/usr/local/bin/aplay", soundfile)
+        cmd := exec.Command("/usr/bin/mplayer","-ao","pulse", soundfile)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		fmt.Println(err)
@@ -474,8 +511,8 @@ func GenUUID() string {
 	return id.String()
 }
 
-//CommitDatabase save in memory database to a file
-func CommitDatabase() error {
+//SaveState save in memory database to a file
+func SaveState() error {
 
 	var songs Songs
 
