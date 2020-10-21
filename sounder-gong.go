@@ -76,6 +76,8 @@ func main() {
 		Handler:      r, // Pass our instance of gorilla/mux in.
 	}
 
+	fmt.Println("Listening on 0.0.0.0:8080")
+
 	// Run our server in a goroutine so that it doesn't block.
 	go func() {
 		if err := srv.ListenAndServe(); err != nil {
@@ -347,7 +349,7 @@ func PlaySound(soundfile string) {
 
 	// This is possiby the most horrific way to play a sound, but it works
 	// cmd := exec.Command("/usr/local/bin/aplay", soundfile)
-        cmd := exec.Command("/usr/bin/mplayer","-ao","pulse", soundfile)
+	cmd := exec.Command("/usr/bin/mplayer", "-ao", "pulse", soundfile)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		fmt.Println(err)
