@@ -1,22 +1,124 @@
 {
     "songs": [
         {
-            "id": "1j4pNvo2Mc1SRIRV9xJI04zqzew",
-            "title": "Sabatoge",
-            "description": "fasdfasdfasdf",
-            "path": "sounds/1j4pNvo2Mc1SRIRV9xJI04zqzew_Beastie_Boys_-_Sabotage_Official_Music_Video-z5rRZdiu1UE.mp3"
+            "id": "1j4vmqtuxitUyacyYtnnesZj3Qb",
+            "title": "Audience Clapping",
+            "description": "Clapping",
+            "path": "sounds/1j4vmqtuxitUyacyYtnnesZj3Qb_audience-clapping01.wav"
         },
         {
-            "id": "1jBWxhCI0qqpKojwbMFtgflHFsM",
-            "title": "Bruce the Goose",
+            "id": "1j4wS6P5Bcg7IeljTpwoHtQRVrU",
+            "title": "Knight Rider",
             "description": "",
-            "path": "sounds/1jBWxhCI0qqpKojwbMFtgflHFsM_Bruce_Springsteen_-_The_Rising_official_video-6i-fiRgbpr4.mp3"
+            "path": "sounds/1j4wS6P5Bcg7IeljTpwoHtQRVrU_knight-rider-theme-song.wav"
         },
         {
-            "id": "1jBX02WjnbTKUgfvZ1lr5NHD1zq",
-            "title": "Alice with Malice",
+            "id": "1j4wjWOZjgHlLEr1NaTdtZsdJOP",
+            "title": "WaWaWa",
             "description": "",
-            "path": "sounds/1jBX02WjnbTKUgfvZ1lr5NHD1zq_Alice_In_Chains_-_Man_in_the_Box_Official_Video-TAqZb52sgpU.mp3"
+            "path": "sounds/1j4wjWOZjgHlLEr1NaTdtZsdJOP_wawawa.mp3"
+        },
+        {
+            "id": "1j4xq3SpEPtvScmGA05PYFPBgkg",
+            "title": "Deep Purple",
+            "description": "",
+            "path": "sounds/1j4xq3SpEPtvScmGA05PYFPBgkg_deeppurplebite.mp3"
+        },
+        {
+            "id": "1j4z7f1Mpl8k26daoQL3JIh4CDp",
+            "title": "Children Clapping",
+            "description": "",
+            "path": "sounds/1j4z7f1Mpl8k26daoQL3JIh4CDp_children-clapping.wav"
+        },
+        {
+            "id": "1j50CXUvIGy2o0dJRW1QNHT24fy",
+            "title": "Disapointed",
+            "description": "",
+            "path": "sounds/1j50CXUvIGy2o0dJRW1QNHT24fy_disappointed.wav"
+        },
+        {
+            "id": "1j50XGsuwdS2kQmZR9PyZIKq7oX",
+            "title": "Crowd Laugh",
+            "description": "",
+            "path": "sounds/1j50XGsuwdS2kQmZR9PyZIKq7oX_crowd_laugh_1.wav"
+        },
+        {
+            "id": "1j6Mg8rsbcsrYgdD47zO1XsGZUK",
+            "title": "J2Chroma Heros Will Rise",
+            "description": "",
+            "path": "sounds/1j6Mg8rsbcsrYgdD47zO1XsGZUK_J2_Chroma_Music_-_Heroes_Will_Rise_Epic_Powerful_Vocal_Rock.flac"
+        },
+        {
+            "id": "1j6VRoUPlqRNJdZJRZIZHNuXcty",
+            "title": "Awwww",
+            "description": "",
+            "path": "sounds/1j6VRoUPlqRNJdZJRZIZHNuXcty_aww01.wav"
+        },
+        {
+            "id": "1jzac6vsPni9zkkmv2LpQqEPyEb",
+            "title": "Failure to Communicate",
+            "description": "",
+            "path": "sounds/1jzac6vsPni9zkkmv2LpQqEPyEb_what-we-got-here-is-a-failure-to-communicate.mp3"
+        },
+        {
+            "id": "1jzbWrAkc7HKIuQ1jn9emtRIeeX",
+            "title": "alright-alright",
+            "description": "",
+            "path": "sounds/1jzbWrAkc7HKIuQ1jn9emtRIeeX_alright-alright.wav"
+        },
+        {
+            "id": "1kM9S04NnSAEA4fQ3Oivxk8hqqc",
+            "title": "upbeat-intro",
+            "description": "",
+            "path": "sounds/1kM9S04NnSAEA4fQ3Oivxk8hqqc_upbeat-intro.wav"
+        },
+        {
+            "id": "1kM9XYcxhrgB9jpHLD3JEbAXLnN",
+            "title": "easy-intro",
+            "description": "",
+            "path": "sounds/1kM9XYcxhrgB9jpHLD3JEbAXLnN_easy-intro.wav"
+        },
+        {
+            "id": "1kM9dVl6RYnNSuqfap4EgaJhiEH",
+            "title": "Cha Ching",
+            "description": "",
+            "path": "sounds/1kM9dVl6RYnNSuqfap4EgaJhiEH_chaching.wav"
+        },
+        {
+            "id": "1kM9g39AD7iJ4bJROezzxwh2OAf",
+            "title": "Beep",
+            "description": "",
+            "path": "sounds/1kM9g39AD7iJ4bJROezzxwh2OAf_beep.wav"
+        },
+        {
+            "id": "1kM9j9hHbfmsWDVjSQbNXnP467z",
+            "title": "Wow Wee",
+            "description": "",
+            "path": "sounds/1kM9j9hHbfmsWDVjSQbNXnP467z_woweee.wav"
+        },
+        {
+            "id": "1kM9s5wQuDp4IFFuBnC4RM3KIzs",
+            "title": "Buzz",
+            "description": "",
+            "path": "sounds/1kM9s5wQuDp4IFFuBnC4RM3KIzs_crickets.wav"
+        },
+        {
+            "id": "1kM9yI9duxDlMLxvpx9UF1cnuY1",
+            "title": "Mu hahaha",
+            "description": "",
+            "path": "sounds/1kM9yI9duxDlMLxvpx9UF1cnuY1_muhahah.wav"
+        },
+        {
+            "id": "1kMA0z2LoWBoxf8sgpqYwmhup50",
+            "title": "Dumb da Dumb da Dumb",
+            "description": "",
+            "path": "sounds/1kMA0z2LoWBoxf8sgpqYwmhup50_dumb-dumb-do.wav"
+        },
+        {
+            "id": "1kMCTsuvGbeOclOBn2OowzVWleP",
+            "title": "Knight-Rider Short",
+            "description": "",
+            "path": "sounds/1kMCTsuvGbeOclOBn2OowzVWleP_knight-rider-short.wav"
         }
     ]
 }
