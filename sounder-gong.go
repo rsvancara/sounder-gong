@@ -349,7 +349,7 @@ func PlaySound(soundfile string) {
 
 	// This is possiby the most horrific way to play a sound, but it works
 	// cmd := exec.Command("/usr/local/bin/aplay", soundfile)
-	cmd := exec.Command("/usr/bin/mplayer", "-ao", "pulse", soundfile)
+	cmd := exec.Command("/usr/bin/mplayer", "-ao", "lirc=no", "pulse", soundfile)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		fmt.Println(err)
