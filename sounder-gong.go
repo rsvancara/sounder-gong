@@ -13,6 +13,7 @@ import (
 	"os/exec"
 	"os/signal"
 	"time"
+        "net"
 
 	"github.com/flosch/pongo2"
 	"github.com/gorilla/handlers"
@@ -39,6 +40,7 @@ var DB *memdb.MemDB
 
 //VERSION Application version
 var VERSION string = "0.0.1"
+var IPADDR string = ""
 
 func main() {
 
@@ -46,6 +48,11 @@ func main() {
 	var wait time.Duration
 	flag.DurationVar(&wait, "graceful-timeout", time.Second*15, "the duration for which the server gracefully wait for existing connections to finish - e.g. 15s or 1m")
 	flag.Parse()
+
+	// Get local Ip Address
+	netIP := GetOutboundIP()
+	fmt.Println(netIP.String())
+	IPADDR = netIP.String()
 
 	// Create the in memory database
 	db, err := CreateDB()
@@ -132,6 +139,7 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 		"songs":    songs,
 		"hostname": hostname,
 		"VERSION":  VERSION,
+		"IPADDR": IPADDR,
 	})
 
 	if err != nil {
@@ -578,4 +586,17 @@ func LoadState() (Songs, error) {
 	}
 
 	return songs, nil
+}
+
+// Get preferred outbound ip of this machine
+func GetOutboundIP() net.IP {
+	conn, err := net.Dial("udp", "8.8.8.8:80")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer conn.Close()
+
+	localAddr := conn.LocalAddr().(*net.UDPAddr)
+
+	return localAddr.IP
 }

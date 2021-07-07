@@ -1,9 +1,10 @@
 # Sounder Gong 
 
-This project aims to build a raspberry pi based sound board that is capable of integrating with a Elgato Stream Deck.
-
-The Elgato Stream Deck is used by pod casters, bloggers and content creators to provide a button pad that integrates
-easily with software such as Zoom, OBS and many other types of software to name a few.  
+Has the  Covid19 pandemic blues and endless days of zoom meetings result in post traumatic stress 
+disorder?  Well look no further! Liven up your zoom meetings with Sounder Gong, a small little application
+that will add flare to otherwise boring zoom meetings through a convenient, easy to use interface which allows you to
+upload your sound clips on a DAC powered raspberry pi.  The sound clips are accessible through a simple to use web API
+that can be integrated with a variety of controllers that support calling a simple URL, such as the Elgato Stream Deck.
 
 The reason I built this project includes bringing a better experience to zoom meetings that I host daily as part of my 
 job.  Remote work and zoom has basically turned us all into media presenters, whether we like or not. 
@@ -140,7 +141,7 @@ mplayer -ao pulse somesoundfile.wav
 
 If you hear the sound, PulseAudio is working correctly
 
-TODO: Find an interface to confi
+TODO: Find an interface to config
 
 
 
